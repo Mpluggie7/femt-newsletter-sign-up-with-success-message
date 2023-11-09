@@ -5,55 +5,57 @@ import signUpPicMobile from "../../public/assets/images/illustration-sign-up-mob
 import signUpPicDesktop from "../../public/assets/images/illustration-sign-up-desktop.svg";
 import listPic from "../../public/assets/images/icon-list.svg";
 import successPic from "../../public/assets/images/icon-success.svg";
-import { useForm, SubmitHandler } from "react-hook-form";
-import { useEffect, useState } from "react";
-
-type Inputs = {
-  email: string;
-};
+import { useForm, SubmitHandler, Controller } from "react-hook-form";
+import { useState } from "react";
+import * as yup from "yup";
+import { yupResolver } from "@hookform/resolvers/yup";
 
 const roboto = Roboto({
   weight: ["400", "700"],
   subsets: ["latin"],
 });
 
+type Inputs = {
+  email: string;
+};
+
+const defaultValues: Inputs = {
+  email: "",
+};
+
+const userSchema = yup.object({
+  email: yup.string().email("Valid email required").trim().required(),
+});
+
 export default function Home() {
-  const [emailText, setEmailText] = useState("");
-  const [emailPassed, setEmailPassed] = useState(false);
+  const [emailPassed, setEmailPassed] = useState<Inputs>(defaultValues);
   const {
-    register,
+    // register,
+    control,
     handleSubmit,
     reset,
-    watch,
+    // watch,
     formState: { errors },
-  } = useForm<Inputs>();
+  } = useForm<Inputs>({
+    defaultValues: defaultValues,
+    resolver: yupResolver(userSchema),
+  });
+
   const onSubmit: SubmitHandler<Inputs> = (data) => {
     // console.log(data);
-    setEmailPassed(true);
+    setEmailPassed(data);
   };
-
-  // console.log("watch", watch("email"));
-
-  const handleInput = (value: string) => {
-    reset();
-    setEmailText(value);
-  };
-
-  useEffect(() => {
-    // console.log("emailText", emailText);
-  }, [emailText]);
 
   const backToFirstPage = () => {
-    setEmailPassed(false);
-    setEmailText("");
-    reset();
+    setEmailPassed(defaultValues);
+    reset(defaultValues);
   };
 
   return (
     <main
       className={`${roboto.className} w-full sm:bg-[var(--Charcoal-Grey)] text-[16px] sm:text-[14px]`}
     >
-      {!emailPassed && (
+      {emailPassed.email === "" ? (
         <div className="h-screen flex justify-center sm:items-center sm:p-4">
           <div className="w-[375px] sm:w-fit sm:flex flex-row-reverse bg-white sm:rounded-[30px]">
             <div className="imageBlock sm:p-6">
@@ -97,28 +99,27 @@ export default function Home() {
                     <label htmlFor="emailInput">Email address</label>
                     {errors.email && (
                       <p className="text-sm text-[var(--Tomato)]">
-                        Valid email required
+                        {errors.email.message}
                       </p>
                     )}
                   </div>
-
-                  <input
-                    type="text"
-                    placeholder="email@company.com"
-                    className={`w-full text-sm rounded-lg p-6 py-4 mb-6 sm:mb-4 cursor-pointer
-                ${
-                  !errors.email
-                    ? "border border-[var(--Grey)]"
-                    : "border-2 border-[var(--Tomato)] bg-red-100 text-[var(--Tomato)] font-bold"
-                }
-                `}
-                    {...register("email", {
-                      required: true,
-                      pattern: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i,
-                    })}
-                    onChange={(e) => handleInput(e.target.value)}
-                    value={emailText}
+                  <Controller
+                    name="email"
+                    control={control}
+                    render={({ field }) => (
+                      <input
+                        type="text"
+                        placeholder="email@company.com"
+                        className={`w-full text-sm rounded-lg p-6 py-4 mb-6 sm:mb-4 cursor-pointer ${
+                          !errors.email
+                            ? "border border-[var(--Grey)]"
+                            : "border-2 border-[var(--Tomato)] bg-red-100 text-[var(--Tomato)] font-bold"
+                        }`}
+                        {...field}
+                      />
+                    )}
                   />
+
                   <input
                     type="submit"
                     className="w-full rounded-lg bg-[var(--Dark-Slate-Grey)] text-white p-6 py-4
@@ -131,9 +132,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      )}
-
-      {emailPassed && (
+      ) : (
         <div className="h-screen flex justify-center sm:items-center">
           <div className="w-[375px] sm:w-[400px] sm:h-fit bg-white sm:block flex flex-col justify-between p-6 sm:p-10 sm:bg-white sm:rounded-[30px]">
             <div className="py-24 sm:p-0 sm:pb-6">
@@ -143,8 +142,9 @@ export default function Home() {
               </h1>
               <p>
                 A confirmation email has been sent to{" "}
-                <span className="font-bold">{emailText}</span>. Please open it
-                and click the button inside to confirm your subscription.
+                <span className="font-bold">{emailPassed.email}</span>. Please
+                open it and click the button inside to confirm your
+                subscription.
               </p>
             </div>
             <div>
